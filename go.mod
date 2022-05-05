@@ -6,6 +6,9 @@ require (
 	github.com/ipfs/go-log v0.0.1
 	github.com/libp2p/go-buffer-pool v0.0.2
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f
+	metrics v0.0.0-00010101000000-000000000000
 )
+
+replace metrics => ./../metrics/
 
 go 1.12

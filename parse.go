@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"metrics"
 	"strconv"
 	"strings"
 )
@@ -11,14 +12,14 @@ import (
 const (
 	// DefaultBlockSize is the chunk size that splitters produce (or aim to).
 	DefaultBlockSize int64 = 1024 * 256
-
-	// No leaf block should contain more than 1MiB of payload data ( wrapping overhead aside )
-	// This effectively mandates the maximum chunk size
-	// See discussion at https://github.com/ipfs/go-ipfs-chunker/pull/21#discussion_r369124879 for background
-	ChunkSizeLimit int = 4194304
 )
 
 var (
+	// ChunkSizeLimit No leaf block should contain more than 1MiB of payload data ( wrapping overhead aside )
+	// This effectively mandates the maximum chunk size
+	// See discussion at https://github.com/ipfs/go-ipfs-chunker/pull/21#discussion_r369124879 for background
+	ChunkSizeLimit int = 1024 * 1024
+
 	ErrRabinMin = errors.New("rabin min must be greater than 16")
 	ErrSize     = errors.New("chunker size must be greater than 0")
 	ErrSizeMax  = fmt.Errorf("chunker parameters may not exceed the maximum chunk size of %d", ChunkSizeLimit)
@@ -28,6 +29,7 @@ var (
 // it supports "default" (""), "size-{size}", "rabin", "rabin-{blocksize}",
 // "rabin-{min}-{avg}-{max}" and "buzhash".
 func FromString(r io.Reader, chunker string) (Splitter, error) {
+	ChunkSizeLimit = metrics.BlockSizeLimit
 	switch {
 	case chunker == "" || chunker == "default":
 		return DefaultSplitter(r), nil
@@ -40,7 +42,7 @@ func FromString(r io.Reader, chunker string) (Splitter, error) {
 		} else if size <= 0 {
 			return nil, ErrSize
 		} else if size > ChunkSizeLimit {
-			return nil, ErrSizeMax
+			return nil, fmt.Errorf("chunker parameters %d may not exceed the maximum chunk size of %d", size, ChunkSizeLimit)
 		}
 		return NewSizeSplitter(r, int64(size)), nil
 
